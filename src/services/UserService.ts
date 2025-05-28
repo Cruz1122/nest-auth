@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
-import { User as SchemaUser, UserDocument } from '../schema/user.schema';
+import { User as SchemaUser, UserDocument } from '../users/schema/user.schema';
 import {
     ChangePasswordDto,
     CreateUserDto,
@@ -18,12 +18,12 @@ import {
     RefreshTokenDto,
     UpdateUserDto,
     VerifyEmailDto,
-} from '../dto/user.dto';
-import { User, UserServiceInterface } from '../interfaces/user.interface';
+} from '../users/DTO/user.dto';
+import { User, UserServiceInterface } from '../users/interfaces/user.interface';
 import { EmailService } from '../email/email.service';
 
 @Injectable()
-export class UsersService implements UserServiceInterface {
+export class UserService implements UserServiceInterface {
     constructor(
         @InjectModel(SchemaUser.name) private userModel: Model<UserDocument>,
         private jwtService: JwtService,
@@ -56,6 +56,23 @@ export class UsersService implements UserServiceInterface {
             verificationCodeExpires.getMinutes() + 5,
         );
 
-        // Aquí seguiría el código para guardar el usuario y enviar el correo
+        // Guardar el usuario en la base de datos
+        const createdUser = await this.userModel.create({
+            ...createUserDto,
+            password: hashedPassword,
+            verificationCode,
+            verificationCodeExpires,
+            isVerified: false,
+        });
+
+        // Enviar correo de verificación
+        await this.emailService.sendVerificationEmail(
+            createdUser.email,
+            verificationCode,
+        );
+
+        return this.userInterface(createdUser);
     }
 }
+
+export default UserService;
