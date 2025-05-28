@@ -1,0 +1,52 @@
+name: CI - NestJS with SonarQube
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build docker-compose services
+        run: docker compose -f docker-compose.yml build
+
+      - name: Start containers
+        run: docker compose -f docker-compose.yml up -d
+
+      - name: Wait for SonarQube to be healthy
+        run: |
+          echo "⏳ Esperando a que SonarQube esté listo…"
+          for i in {1..10}; do
+            if curl -s http://localhost:9000/api/system/health \
+               | grep -q '"status":"UP"'; then
+              echo "SonarQube está ONLINE"
+              break
+            fi
+            echo "… intentos restantes $((10 - i))"
+            sleep 10
+          done
+
+      - name: Run tests and generate coverage
+        run: npm test -- --coverage
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v1.2
+        with:
+          projectBaseDir: .
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: http://localhost:9000
