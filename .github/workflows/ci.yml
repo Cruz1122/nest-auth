@@ -13,6 +13,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set up Docker Compose (opcional)
+        uses: docker/setup-compose-action@v1
+
+      - name: Start SonarQube via Docker Compose
+        run: |
+          docker-compose up -d sonarqube
+
+      - name: Wait for SonarQube to be healthy
+        run: |
+          echo "⏳ Esperando a SonarQube…"
+          for i in {1..15}; do
+            status=$(curl -s http://localhost:9000/api/system/health | jq -r .status)
+            if [ "$status" = "UP" ]; then
+              echo "✅ SonarQube está UP"
+              break
+            fi
+            echo "… status=$status; reintentando en 10s"
+            sleep 10
+          done
+
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
@@ -21,26 +41,7 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build docker-compose services
-        run: docker compose -f docker-compose.yml build
-
-      - name: Start containers
-        run: docker compose -f docker-compose.yml up -d
-
-      - name: Wait for SonarQube to be healthy
-        run: |
-          echo "⏳ Esperando a que SonarQube esté listo…"
-          for i in {1..10}; do
-            if curl -s http://localhost:9000/api/system/health \
-               | grep -q '"status":"UP"'; then
-              echo "SonarQube está ONLINE"
-              break
-            fi
-            echo "… intentos restantes $((10 - i))"
-            sleep 10
-          done
-
-      - name: Run tests and generate coverage
+      - name: Run tests and collect coverage
         run: npm test -- --coverage
 
       - name: SonarQube Scan
