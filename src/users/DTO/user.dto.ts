@@ -55,7 +55,7 @@ export class RefreshTokenDto {
 export class ChangePasswordDto {
   @IsNotEmpty()
   @IsString()
-  currentPassword: string;
+  oldPassword: string;
 
   @IsNotEmpty()
   @IsString()
