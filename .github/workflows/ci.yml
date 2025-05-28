@@ -1,0 +1,33 @@
+name: CI - NestJS with SonarQube
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests and generate coverage
+        run: npm test -- --coverage
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v1.2
+        with:
+          projectBaseDir: .
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: http://localhost:9000
