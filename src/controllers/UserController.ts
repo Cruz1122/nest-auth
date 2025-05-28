@@ -10,7 +10,7 @@ import {
     HttpCode,
     HttpStatus,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { UserService } from '../services/UserService';
 import {
     CreateUserDto,
     UpdateUserDto,
@@ -18,12 +18,12 @@ import {
     RefreshTokenDto,
     ChangePasswordDto,
     VerifyEmailDto,
-} from '../dto/user.dto';
-import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+} from '../users/DTO/user.dto';
+import { JwtAuthGuard } from '../users/guards/jwt-auth.guard';
 
 @Controller('users')
 export class UsersController {
-    constructor(private readonly usersService: UsersService) { }
+    constructor(private readonly usersService: UserService) { }
 
     @Post('signup')
     async create(@Body() createUserDto: CreateUserDto) {
