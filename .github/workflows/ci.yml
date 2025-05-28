@@ -21,11 +21,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Set up Docker Compose
-        uses: docker/setup-compose-action@v1 
+      - name: Build docker-compose services
+        run: docker compose -f docker-compose.yml build
 
-      - name: Start SonarQube container
-        run: docker-compose -f .github/sonar/docker-compose.yml up -d
+      - name: Start containers
+        run: docker compose -f docker-compose.yml up -d
 
       - name: Wait for SonarQube to be healthy
         run: |
